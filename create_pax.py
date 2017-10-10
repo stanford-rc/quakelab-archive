@@ -182,10 +182,22 @@ while len(dirs_to_examine) > 0:
         # Get a path that is relative to our starting point.
         entry_relative_path = entry.relative_to(dir_path)
 
+        # Symlinks are added immediately.
+        # NOTE: We _must_ do this before any other checks, because we don't
+        # want to accidentally end up archiving symlinked directories!
+        if entry.is_symlink() is True:
+            if args.verbose is True:
+                print('', entry, '[symlink]')
+            write_catalog(catalog_obj, entry)
+            tar_obj.add(
+                str(entry),
+                arcname=str(entry_relative_path),
+                recursive=False,
+            )
 
         # For subdirectories, add a catalog item now, but queue up the
         # directory, so it can be processed later.
-        if entry.is_dir() is True:
+        elif entry.is_dir() is True:
             if args.verbose is True:
                 print('', entry.name, '[directory; queued]')
             write_catalog(catalog_obj, entry)
@@ -195,17 +207,6 @@ while len(dirs_to_examine) > 0:
                 recursive=False,
             )
             dirs_to_examine.append(entry)
-
-        # Symlinks are added immediately.
-        elif entry.is_symlink() is True:
-            if args.verbose is True:
-                print('', entry, '[symlink]')
-            write_catalog(catalog_obj, entry)
-            tar_obj.add(
-                str(entry),
-                arcname=str(entry_relative_path),
-                recursive=False,
-            )
 
         # Files use our threading code to hash and add in one go.
         elif entry.is_file() is True:
