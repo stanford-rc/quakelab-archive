@@ -134,14 +134,16 @@ def write_to_archive(tar_obj, item_path, stream):
     tar_info.size = item_stat.st_size
 
     # Try resolving IDs to names.
+    # NOTE: When no name is available, don't use None, because tarfile tries to
+    # encode it.
     try:
         tar_info.uname = pwd.getpwuid(item_stat.st_uid).pw_name
     except KeyError:
-        tar_info.uname = None
+        tar_info.uname = ''
     try:
         tar_info.gname = grp.getgrgid(item_stat.st_gid).gr_name
     except KeyError:
-        tar_info.gname = None
+        tar_info.gname = ''
 
     # Actually add the file to the archive.
     tar_obj.addfile(tar_info, stream)
